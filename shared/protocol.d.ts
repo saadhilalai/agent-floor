@@ -4,10 +4,12 @@ export type EventType = 'join' | 'status' | 'tool' | 'message' | 'task' | 'leave
 /** What clients POST to /events. Only `type` and `agent` are required. */
 export interface InboundEvent {
   type: EventType;
-  agent: string | { id: string; name?: string; role?: string; source?: string };
+  agent: string | { id: string; name?: string; role?: string; source?: string; machine?: string };
   name?: string;
   role?: string;
   source?: string;
+  /** Which computer sent it (AGENT_FLOOR_MACHINE), shown as a 🖥️ badge. */
+  machine?: string;
   team?: string | { id?: string; name: string };
   parent?: string;
   status?: Status;
@@ -27,6 +29,7 @@ export interface FloorEvent {
   name?: string;
   role?: string;
   source?: string;
+  machine?: string;
   parent?: string;
   team?: string;
   teamName?: string;
@@ -53,6 +56,7 @@ export interface Agent {
   role: string;
   team: string;
   source: string;
+  machine?: string;
   parent?: string;
   status: Status;
   activity?: string;
@@ -93,3 +97,6 @@ export function slug(value: unknown): string;
 export function normalizeEvent(raw: unknown, now?: number): FloorEvent | null;
 export function applyEvent(state: WorldState, ev: FloorEvent | null): { state: WorldState; effects: Effect[] };
 export function sweep(state: WorldState, now?: number, opts?: { offlineMs?: number; doneHelperMs?: number; staleMs?: number }): string[];
+
+/** '🖥️' when the agent carries a machine tag, otherwise ''. */
+export function machineBadge(agent: Pick<Agent, 'machine'> | undefined): string;

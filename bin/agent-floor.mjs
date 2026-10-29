@@ -90,6 +90,8 @@ async function healthy() {
  */
 async function postOrLaunch(events) {
   if (!events.length) return;
+  const { withMachine } = await import('../adapters/common.mjs');
+  events = withMachine(events);
   try {
     await post(events);
     return;
@@ -222,9 +224,11 @@ async function emit(args) {
     task: f.task,
     to: f.to ? String(f.to).split(',') : undefined,
     text: f.text,
+    machine: f.machine,
   };
+  const { withMachine } = await import('../adapters/common.mjs');
   try {
-    await post([ev]);
+    await post(withMachine([ev]));
   } catch (err) {
     console.error(`Could not reach ${URL_BASE}. Is the floor running? (${err.message})`);
     process.exit(1);
@@ -370,7 +374,7 @@ if (cmd === '--help' || cmd === '-h' || cmd === 'help') {
   agent-floor demo [--agents 60]          (stress test with many agents)
   agent-floor hook <claude|codex|cursor>    (called by agent hooks)
 
-Environment: AGENT_FLOOR_URL, AGENT_FLOOR_PORT, AGENT_FLOOR_TEAM, AGENT_FLOOR_NAME,\n             AGENT_FLOOR_AUTOLAUNCH=0 (hooks never open the app)`);
+Environment: AGENT_FLOOR_URL, AGENT_FLOOR_PORT, AGENT_FLOOR_TEAM, AGENT_FLOOR_NAME,\n             AGENT_FLOOR_MACHINE=PC (a 🖥️ badge on this computer's agents),\n             AGENT_FLOOR_AUTOLAUNCH=0 (hooks never open the app)`);
 } else if (commands[cmd]) {
   await commands[cmd](rest);
 } else if (cmd.startsWith('--')) {

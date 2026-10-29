@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { applyEvent, createState, normalizeEvent, sweep } from '../shared/protocol.js';
+import { applyEvent, createState, machineBadge, normalizeEvent, sweep } from '../shared/protocol.js';
+import { withMachine } from '../adapters/common.mjs';
 import { fromClaude } from '../adapters/claude.mjs';
 import { fromCodex } from '../adapters/codex.mjs';
 import { fromCursor, cursorResponse } from '../adapters/cursor.mjs';
@@ -81,4 +82,27 @@ test('sweep removes departed agents and empty teams', () => {
   run(s, { type: 'leave', agent: 'a', ts: 1000 });
   assert.deepEqual(sweep(s, 1000 + 60_000), ['a']);
   assert.equal(Object.keys(s.teams).length, 0);
+});
+
+test('AGENT_FLOOR_MACHINE tags the events a hook sends and gives the agent a 🖥️ badge', () => {
+  const events = withMachine(fromClaude({ hook_event_name: 'SessionStart', session_id: 'pc-session-1', cwd: '/w/claudex' }), 'PC');
+  assert.ok(events.length > 0);
+  assert.ok(events.every((e) => e.machine === 'PC'));
+  const s = createState();
+  for (const e of events) run(s, e);
+  const agent = Object.values(s.agents)[0];
+  assert.equal(agent.machine, 'PC');
+  assert.equal(machineBadge(agent), '🖥️');
+  // a later event without the tag keeps the badge
+  run(s, { type: 'status', agent: agent.id, status: 'working' });
+  assert.equal(s.agents[agent.id].machine, 'PC');
+});
+
+test('no AGENT_FLOOR_MACHINE: events and agents stay untagged, no badge', () => {
+  const events = withMachine(fromClaude({ hook_event_name: 'SessionStart', session_id: 'mac-session-1', cwd: '/w/x' }), '');
+  assert.ok(events.every((e) => !('machine' in e)));
+  const s = createState();
+  for (const e of events) run(s, e);
+  assert.equal(machineBadge(Object.values(s.agents)[0]), '');
+  assert.equal(withMachine([{ type: 'reset' }], 'PC')[0].machine, undefined);
 });

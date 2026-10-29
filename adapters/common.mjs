@@ -8,6 +8,13 @@ export function slugKey(value) {
   return String(value || 'x').toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 24);
 }
 
+/** Tag events with this computer's name (AGENT_FLOOR_MACHINE, e.g. PC) so its agents get a 🖥️ badge. */
+export function withMachine(events, machine = process.env.AGENT_FLOOR_MACHINE) {
+  const m = String(machine || '').trim();
+  if (!m) return events;
+  return events.map((e) => (e && e.type !== 'reset' && !e.machine ? { ...e, machine: m } : e));
+}
+
 export function teamFromCwd(cwd) {
   return process.env.AGENT_FLOOR_TEAM || (cwd ? basename(cwd) : 'workspace');
 }

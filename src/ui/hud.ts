@@ -1,4 +1,5 @@
 import type { Agent, WorldState } from '../../shared/protocol';
+import { machineBadge } from '../../shared/protocol.js';
 import type { ConnectionMode } from '../core/store';
 import type { Anchor } from '../world/World';
 import { looksFor, shirtFor, sourceLabel, STATUS_COLORS, STATUS_LABEL, teamAccent } from '../world/palette';
@@ -245,8 +246,8 @@ export class Hud {
       <div class="card-head">
         <span class="avatar" style="--shirt:${shirtFor(a.role)};--skin:${look.skin};--hair:${look.hair}" aria-hidden="true"><i></i></span>
         <div class="who">
-          <h2>${esc(a.name)}</h2>
-          <p>${esc(a.role)} in ${esc(team?.name || a.team)}</p>
+          <h2>${machineBadge(a) ? `<span class="machine" title="On ${esc(a.machine ?? "")}">${machineBadge(a)}</span> ` : ''}${esc(a.name)}</h2>
+          <p>${esc(a.role)} in ${esc(team?.name || a.team)}${a.machine ? ` on ${esc(a.machine)}` : ''}</p>
         </div>
         <button type="button" class="icon-btn close" aria-label="Close">${icon('x')}</button>
       </div>
@@ -368,10 +369,11 @@ export class Hud {
   }
 
   private updateTag(tag: Tag, a: Agent) {
-    const key = `${a.name}|${a.role}|${a.status}|${a.activity}`;
+    const key = `${a.name}|${a.machine}|${a.role}|${a.status}|${a.activity}`;
     if (key === tag.key) return;
     tag.key = key;
-    tag.name.textContent = a.name;
+    tag.name.textContent = machineBadge(a) ? `${machineBadge(a)} ${a.name}` : a.name;
+    tag.name.title = a.machine ? `On ${a.machine}` : '';
     tag.role.textContent = a.role.toLowerCase() === a.name.toLowerCase() ? '' : a.role;
     tag.dot.style.background = STATUS_COLORS[a.status];
     tag.root.dataset.status = a.status;

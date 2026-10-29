@@ -11,6 +11,11 @@ export const EVENT_TYPES = ['join', 'status', 'tool', 'message', 'task', 'leave'
 const MAX_HISTORY = 24;
 const MAX_TEXT = 280;
 
+/** The badge shown before an agent's name when its events carry a machine tag (AGENT_FLOOR_MACHINE). */
+export function machineBadge(agent) {
+  return agent && agent.machine ? '🖥️' : '';
+}
+
 export function createState() {
   return { teams: {}, agents: {}, seq: 0, updatedAt: 0 };
 }
@@ -59,6 +64,7 @@ export function normalizeEvent(raw, now = Date.now()) {
     name: clip(raw.name ?? agentRaw.name, 40),
     role: clip(raw.role ?? agentRaw.role, 40),
     source: clip(raw.source ?? agentRaw.source, 32),
+    machine: clip(raw.machine ?? agentRaw.machine, 24),
     parent: raw.parent != null ? String(raw.parent).slice(0, 128) : undefined,
     team: teamName ? slug(teamRaw.id ?? teamName) : undefined,
     teamName,
@@ -118,6 +124,7 @@ function ensureAgent(state, ev, now) {
       role: ev.role || 'Agent',
       team: teamId,
       source: ev.source || 'custom',
+      machine: ev.machine,
       parent: ev.parent,
       status: 'idle',
       activity: undefined,
@@ -131,6 +138,7 @@ function ensureAgent(state, ev, now) {
     if (ev.name) agent.name = ev.name;
     if (ev.role) agent.role = ev.role;
     if (ev.source) agent.source = ev.source;
+    if (ev.machine) agent.machine = ev.machine;
     if (ev.parent) agent.parent = ev.parent;
     if (ev.team && ev.team !== agent.team) agent.team = ev.team;
     agent.lastSeen = now;
